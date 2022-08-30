@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.23)
 
 
-######## Project information ########
+############ Project information ############
 set(Project_Title       ClickerHeroesCheats)
 set(Project_Author      ClaraCF)
 
 
 # Configure project
-project(${Project_Title} LANGUAGES C CXX VERSION ${Project_Version})
+project(${Project_Title} LANGUAGES CXX VERSION ${Project_Version})
 
 
 # PkgConfig to find libraries on Unix systems
@@ -17,8 +17,26 @@ if(NOT WIN32)
     find_package(PkgConfig REQUIRED)
 endif()
 
+# Add local project cmake directory to module path
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
 # Find required libraries
-find_package(ZLIB REQUIRED) # For compression of save files
+# For compression and de-compression of save files
+find_package(ZLIB REQUIRED)
+
+# Try to find LibreSSL
+find_package(LibreSSL)
+if(NOT LIBRESSL_FOUND)
+    # If LibreSSL is not available,
+    # fallback to OpenSSL
+    find_package(OPENSSL REQUIRED)
+    set(SSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR})
+    set(SSL_LIBRARIES ${OPENSSL_LIBRARIES})
+else()
+    # LibreSSL Found
+    set(SSL_INCLUDE_DIR ${LIBRESSL_INCLUDE_DIR})
+    set(SSL_LIBRARIES ${LIBRESSL_LIBRARIES})
+endif()
 
 
 # Set the CMake Build Type to Release by default
@@ -59,7 +77,9 @@ add_executable(${PROJECT_NAME} ${PROJECT_HEADERS} ${PROJECT_SOURCES})
 
 # Specify include directories for libraries
 target_include_directories(${PROJECT_NAME} PUBLIC ${ZLIB_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${SSL_INCLUDE_DIR})
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} PUBLIC ${ZLIB_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${SSL_LIBRARIES})
 
